@@ -1,6 +1,7 @@
 ## Docker Compose Content
 * MySQL 5.7
 * RabbitMQ
+* Redis
 * Elasticsearch 7.5
 * Kibana
 * News Aplication - REST
