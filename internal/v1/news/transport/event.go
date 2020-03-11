@@ -32,11 +32,13 @@ func (DI *Event) insert(msg amqp.Delivery)  {
 	err := json.Unmarshal(msg.Body, request)
 	if err != nil {
 		rabbitmq.Error(entity.TopicInsertNews, fmt.Sprint(trackingID), msg, err)
+		return
 	}
 
 	// Insert data news
 	if err = DI.usecase.Insert(request); err != nil {
 		rabbitmq.Error(entity.TopicInsertNews, fmt.Sprint(trackingID), msg, err)
+		return
 	}
 
 	// Ack event
