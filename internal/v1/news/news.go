@@ -14,7 +14,10 @@ import (
 func (DI *news) List(request *entity.Request) (entity.NewsSlice, error) {
 	var errs errgroup.Group
 
-	data, _ := DI.repository.List(request.Limit, request.Offset())
+	data, err := DI.repository.List(request.Limit, request.Offset())
+	if err != nil {
+		return nil, errors.New(errors.Badrequest, errors.Message(fmt.Sprintf("Error when get data : %v", err)))
+	}
 
 	// Populating data dengan multiprocessing
 	for i := 0; i < len(data); i++ {
@@ -32,7 +35,10 @@ func (DI *news) List(request *entity.Request) (entity.NewsSlice, error) {
 				data[i].Body = cache["body"]
 			} else {
 				// get data from DB
-				detail, _ := DI.repository.Detail(data[i].ID)
+				detail, err := DI.repository.Detail(data[i].ID)
+				if err != nil {
+					return errors.New(errors.Badrequest, errors.Message(fmt.Sprintf("Error when get data : %v", err)))
+				}
 
 				// set news cache
 				if _, err = redis.GetConnection().HMSet(fmt.Sprint(data[i].ID), map[string]interface{}{
