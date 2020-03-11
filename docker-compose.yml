@@ -1,0 +1,108 @@
+version: '3'
+
+services:
+  # Mysql
+  mysql:
+    image: mysql:5.7
+    ports:
+      - ${MYSQL_PORT}:3306
+    volumes:
+      - ./migrations/news.sql:/docker-entrypoint-initdb.d/news.sql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+
+  # Redis
+  redis:
+    image: redis:5-alpine
+    ports:
+      - ${REDIS_PORT}:6379
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:alpine
+    ports:
+      - "${RABBITMQ_NODE_PORT}:5672"
+    privileged: true
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+
+  # ElasticSearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.0
+    environment:
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    cap_add:
+      - IPC_LOCK
+    ports:
+     - "${ELASTICSEARCH_HTTP_PORT}:9200"
+     - "${ELASTICSEARCH_TRANSPORT_PORT}:9300"
+
+  # Kibana
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.5.0
+    depends_on:
+      - elasticsearch
+    environment:
+      - "ELASTICSEARCH_URL=http://elasticsearch:${ELASTICSEARCH_HTTP_PORT}"
+    ports:
+      - "${KIBANA_PORT}:5601"
+
+  # News Aplication REST ###############################################################################################
+  news-event:
+    build: .
+    image: kumparan/news:production
+    command: ./bin/event
+    restart: on-failure
+    environment:
+      - "DATABASE_DSN=root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/news"
+      - "DATABASE_DRIVER=mysql"
+      - "DATABASE_MOC=100"
+      - "DATABASE_MIC=50"
+      - "DATABASE_TIMEOUT=10"
+      - "REDIS_ADDRESS=redis:${REDIS_PORT}"
+      - "SERVER_REST_PORT=8080"
+      - "SERVER_REST_RTO=10"
+      - "SERVER_REST_WTO=10"
+      - "SERVER_REST_ITO=10"
+      - "APP_NAME=Kumparan News"
+      - "APP_VERSION=1.0.0"
+      - "APP_DEBUG=false"
+      - "APP_DESCRIPTION=Kumparan News"
+      - "ELASTICSEARCH_URL=http://elasticsearch:${ELASTICSEARCH_HTTP_PORT}"
+      - "RABBITMQ_DSN=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:${RABBITMQ_NODE_PORT}"
+      - "RABBITMQ_PORT=${RABBITMQ_NODE_PORT}"
+
+  # News Aplication Worker #############################################################################################
+  news-rest:
+    image: kumparan/news:production
+    command: ./bin/rest
+    restart: on-failure
+    environment:
+      - "DATABASE_DSN=root:${MYSQL_ROOT_PASSWORD}@tcp(mysql:3306)/news"
+      - "DATABASE_DRIVER=mysql"
+      - "DATABASE_MOC=100"
+      - "DATABASE_MIC=50"
+      - "DATABASE_TIMEOUT=10"
+      - "REDIS_ADDRESS=redis:${REDIS_PORT}"
+      - "SERVER_REST_PORT=8080"
+      - "SERVER_REST_RTO=10"
+      - "SERVER_REST_WTO=10"
+      - "SERVER_REST_ITO=10"
+      - "APP_NAME=Kumparan News"
+      - "APP_VERSION=1.0.0"
+      - "APP_DEBUG=false"
+      - "APP_DESCRIPTION=Kumparan News"
+      - "ELASTICSEARCH_URL=http://elasticsearch:${ELASTICSEARCH_HTTP_PORT}"
+      - "RABBITMQ_DSN=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:${RABBITMQ_NODE_PORT}"
+      - "RABBITMQ_PORT=${RABBITMQ_NODE_PORT}"
+    ports:
+      - "8080:8080"

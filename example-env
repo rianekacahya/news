@@ -1,0 +1,23 @@
+# Mysql ###############################
+MYSQL_PORT=3306
+MYSQL_ROOT_PASSWORD=basic
+# Mysql ###############################
+
+# Redis ###############################
+REDIS_PORT=6379
+# Redis ###############################
+
+# RabbitMQ ###############################
+RABBITMQ_NODE_PORT=5672
+RABBITMQ_DEFAULT_USER=root
+RABBITMQ_DEFAULT_PASS=basic
+# RabbitMQ ###############################
+
+# Elasticsearch ###############################
+ELASTICSEARCH_HTTP_PORT=9200
+ELASTICSEARCH_TRANSPORT_PORT=9300
+# Elasticsearch ###############################
+
+# Kibana ###############################
+KIBANA_PORT=5601
+# Kibana ###############################
